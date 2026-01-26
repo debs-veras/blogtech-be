@@ -1,0 +1,13 @@
+import { prisma } from "lib/prisma";
+import app from "./app";
+import "dotenv/config";
+
+const PORT = process.env.PORT;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+});
+process.on("SIGINT", async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});

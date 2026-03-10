@@ -16,12 +16,9 @@ const uploadsPath = path.join(process.cwd(), "uploads");
 app.use("/uploads", (req, res, next) => {
   next();
 });
-
 app.use("/uploads", express.static(uploadsPath));
-
 // registra rotas
 app.use("/", routes);
-
 // middleware de erro deve ser registrado DEPOIS das rotas
 app.use(errorMiddleware);
 

@@ -2,60 +2,88 @@ import { PostController } from "controller/post.controller";
 import { Router, type Router as ExpressRouter } from "express";
 import { authMiddleware } from "middleware/auth.middleware";
 import { ownershipMiddleware } from "middleware/ownership.middleware";
-import {
-  permissionMiddleware,
-  Permission,
-} from "middleware/permissions.middleware";
+import { roleMiddleware } from "middleware/permissions.middleware";
 import { auditMiddleware } from "middleware/audit.middleware";
 import { rateLimitMiddleware } from "middleware/rate-limit.middleware";
+import { ActivityService } from "service/activity.service";
 
 const postRouter: ExpressRouter = Router();
-
 // Rotas públicas
-postRouter.get("/", PostController.getAll);
-postRouter.get("/recent", PostController.getRecent);
-postRouter.get("/most-viewed", PostController.getMostViewed);
+// Rota para obter posts publicados
+postRouter.get("/published", PostController.getPublished);
 postRouter.get("/slug/:slug", PostController.getBySlug);
-postRouter.get("/author/:authorId", PostController.getByAuthor);
-postRouter.get("/:id", PostController.getById);
 
-// Rotas protegidas (requer autenticação)
-postRouter.use(authMiddleware);
-
+// Rota para obter post por ID (apenas ADMIN ou AUTHOR dono do post)
+postRouter.get(
+  "/by-id/:id",
+  authMiddleware,
+  ownershipMiddleware("post"),
+  roleMiddleware(["ADMIN", "AUTHOR"]),
+  PostController.getById,
+);
+// Rota para obter todos os posts (apenas ADMIN)
+postRouter.get(
+  "/",
+  authMiddleware,
+  roleMiddleware(["ADMIN"]),
+  PostController.getAll,
+);
+// Rota para obter dados para dashboard (apenas ADMIN)
+postRouter.get(
+  "/dashboard",
+  authMiddleware,
+  roleMiddleware(["ADMIN"]),
+  PostController.getDashboard,
+);
+// Rota para obter posts por autor
+postRouter.get(
+  "/author/:authorId",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "AUTHOR"]),
+  PostController.getByAuthor,
+);
 // Criar posts (apenas AUTHOR e ADMIN) com rate limit
 postRouter.post(
   "/",
-  rateLimitMiddleware(20, 60 * 60 * 1000), // 20 posts por hora
-  permissionMiddleware([Permission.POST_CREATE]),
-  auditMiddleware("post:create"),
+  rateLimitMiddleware(20, 60 * 60 * 1000),
+  authMiddleware,
+  roleMiddleware(["ADMIN", "AUTHOR"]),
+  auditMiddleware("create", "post"),
   PostController.create,
 );
-
 // Atualizar posts (próprios ou todos se ADMIN)
 postRouter.put(
   "/:id",
-  permissionMiddleware([Permission.POST_UPDATE_OWN]),
+  authMiddleware,
+  roleMiddleware(["ADMIN", "AUTHOR"]),
   ownershipMiddleware("post"),
-  auditMiddleware("post:update"),
+  auditMiddleware("update", "post"),
   PostController.update,
 );
-
 // Deletar posts (próprios ou todos se ADMIN)
 postRouter.delete(
   "/:id",
-  permissionMiddleware([Permission.POST_DELETE_OWN]),
+  authMiddleware,
+  roleMiddleware(["ADMIN", "AUTHOR"]),
   ownershipMiddleware("post"),
-  auditMiddleware("post:delete"),
+  auditMiddleware("delete", "post"),
   PostController.delete,
 );
-
 // Publicar post (próprios ou todos se ADMIN)
 postRouter.patch(
   "/:id/publish",
-  permissionMiddleware([Permission.POST_PUBLISH_OWN]),
+  authMiddleware,
+  roleMiddleware(["ADMIN", "AUTHOR"]),
   ownershipMiddleware("post"),
-  auditMiddleware("post:publish"),
+  auditMiddleware("publish", "post"),
   PostController.publish,
+);
+
+postRouter.get(
+  "/activities",
+  authMiddleware,
+  roleMiddleware(["ADMIN"]),
+  PostController.activitiesPosts,
 );
 
 export default postRouter;

@@ -8,13 +8,13 @@ import { prisma } from "lib/prisma";
 export const ownershipMiddleware = (resourceType: "post" | "user") => {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) return sendError(res, "Usuário não autenticado", 401);
-
     // ADMINs têm acesso total
     if (req.user.role === "ADMIN") return next();
 
-    const resourceId = Array.isArray(req.params.id)
-      ? req.params.id[0]
-      : req.params.id;
+    const resourceId = Array.isArray(req.params.authorId)
+      ? req.params.authorId[0]
+      : req.params.authorId;
+      
     if (!resourceId) return sendError(res, "ID do recurso não fornecido", 400);
 
     try {
@@ -25,14 +25,11 @@ export const ownershipMiddleware = (resourceType: "post" | "user") => {
           where: { id: resourceId },
           select: { authorId: true },
         });
-
+        
         if (!post) return sendError(res, "Post não encontrado", 404);
 
         isOwner = post.authorId === req.user.id;
-      } else if (resourceType === "user") {
-        // Usuário só pode editar seu próprio perfil
-        isOwner = resourceId === req.user.id;
-      }
+      } else if (resourceType === "user") isOwner = resourceId === req.user.id;
 
       if (!isOwner)
         return sendError(

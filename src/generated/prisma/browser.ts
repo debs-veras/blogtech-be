@@ -32,3 +32,8 @@ export type Category = Prisma.CategoryModel
  * 
  */
 export type Post = Prisma.PostModel
+/**
+ * Model Activity
+ * 
+ */
+export type Activity = Prisma.ActivityModel

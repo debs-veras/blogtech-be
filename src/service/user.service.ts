@@ -1,17 +1,16 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "@config/constants";
 import {
-  registerSchema,
-  RegisterInput,
+  RegisterUserInput,
+  registerUserSchema,
   UpdateUserInput,
-  UserFilterInput,
-} from "@schemas/auth.schema";
+} from "@schemas/user.shema";
+import bcrypt from "bcrypt";
+import { UserFilter } from "models/user.model";
+
 import { UserRepository } from "repositories/user.repository";
 
 export class UserService {
   // Listar todos os usuários (com filtros opcionais)
-  static async getAllUsers(filters?: UserFilterInput) {
+  static async getAllUsers(filters?: UserFilter) {
     return UserRepository.getAll(filters);
   }
 
@@ -23,13 +22,12 @@ export class UserService {
   }
 
   // Criar usuário
-  static async createUser(data: RegisterInput) {
+  static async createUser(data: RegisterUserInput) {
     // Valida usando schema
-    const parsed = registerSchema.parse(data);
+    const parsed = registerUserSchema.parse(data);
     // Verifica se email já existe
     const existingUser = await UserRepository.findByEmail(parsed.email);
-    if (existingUser)
-      throw { statusCode: 400, message: "Email já está em uso" };
+    if (existingUser) throw { statusCode: 400, message: "Email já está em uso" };
     // Criptografa senha
     const hashedPassword = await bcrypt.hash(parsed.password, 10);
     const newUser = await UserRepository.create({
@@ -58,21 +56,5 @@ export class UserService {
     const user = await UserRepository.findById(id);
     if (!user) throw { statusCode: 404, message: "Usuário não encontrado" };
     return UserRepository.delete(id);
-  }
-
-  // Login
-  static async login(email: string, password: string) {
-    const user = await UserRepository.findByEmail(email);
-    if (!user) throw { statusCode: 401, message: "Credenciais inválidas" };
-    const passwordMatches = await bcrypt.compare(password, user.password);
-    if (!passwordMatches)
-      throw { statusCode: 401, message: "Credenciais inválidas" };
-    if (!JWT_SECRET) throw { statusCode: 500, message: "JWT não configurado" };
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
-      expiresIn: "1d",
-    });
-    // Retorna token e dados do usuário (sem a senha)
-    const { password: _, ...userWithoutPassword } = user;
-    return { token, user: userWithoutPassword };
   }
 }

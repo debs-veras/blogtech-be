@@ -2,9 +2,10 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import { UploadController } from "../controller/upload.controller";
+import { authMiddleware } from "middleware/auth.middleware";
+import { roleMiddleware } from "middleware/permissions.middleware";
 
 const router = Router();
-const uploadController = new UploadController();
 
 // Configuração do multer
 const storage = multer.diskStorage({
@@ -36,8 +37,12 @@ const upload = multer({
   },
 });
 
-router.post("/", upload.single("image"), (req, res) =>
-  uploadController.upload(req, res),
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "AUTHOR"]),
+  upload.single("image"),
+  UploadController.upload,
 );
 
 export default router;

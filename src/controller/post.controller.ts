@@ -1,13 +1,49 @@
 import { Request, Response, NextFunction } from "express";
-import { sendError, sendSuccess } from "../util/response";
+import { sendSuccess } from "../util/response";
 import { PostService } from "../service/post.service";
+import { registerPostSchema } from "@schemas/post.schema";
+import { ActivityService } from "service/activity.service";
 
 export class PostController {
   static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const filters = req.query;
-      const posts = await PostService.getAllPosts(filters as any);
-      return sendSuccess(res, "Lista de posts", posts);
+      const result = await PostService.getAllPosts(filters);
+      return sendSuccess(res, "Lista de posts", result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async getPublished(req: Request, res: Response, next: NextFunction) {
+    try {
+      const filters = req.query;
+      const result = await PostService.getAllPosts(filters);
+      return sendSuccess(res, "Lista de posts publicados", result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async getDashboard(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await PostService.getDashboardStats();
+      return sendSuccess(res, "Dados do dashboard", data);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async getByAuthor(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { authorId } = req.params;
+      const filters = req.query;
+
+      const posts = await PostService.getPostsByAuthor(
+        authorId as string,
+        filters,
+      );
+      return sendSuccess(res, "Posts do autor", posts);
     } catch (err) {
       next(err);
     }
@@ -16,11 +52,7 @@ export class PostController {
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      if (!id || Array.isArray(id)) {
-        return sendError(res, "ID inválido", { id }, 400);
-      }
-
-      const post = await PostService.getPostById(id);
+      const post = await PostService.getPostById(id as string);
       return sendSuccess(res, "Post encontrado", post);
     } catch (err) {
       next(err);
@@ -30,48 +62,8 @@ export class PostController {
   static async getBySlug(req: Request, res: Response, next: NextFunction) {
     try {
       const { slug } = req.params;
-      if (!slug || Array.isArray(slug)) {
-        return sendError(res, "Slug inválido", { slug }, 400);
-      }
-
-      const post = await PostService.getPostBySlug(slug);
-      // Incrementar visualizações
-      await PostService.incrementViews(post.id);
+      const post = await PostService.getPostBySlug(slug as string);
       return sendSuccess(res, "Post encontrado", post);
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  static async getRecent(req: Request, res: Response, next: NextFunction) {
-    try {
-      const limit = parseInt(req.query.limit as string) || 10;
-      const posts = await PostService.getRecentPosts(limit);
-      return sendSuccess(res, "Posts mais recentes", posts);
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  static async getMostViewed(req: Request, res: Response, next: NextFunction) {
-    try {
-      const limit = parseInt(req.query.limit as string) || 10;
-      const posts = await PostService.getMostViewedPosts(limit);
-      return sendSuccess(res, "Posts mais visualizados", posts);
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  static async getByAuthor(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { authorId } = req.params;
-      if (!authorId || Array.isArray(authorId)) {
-        return sendError(res, "ID do autor inválido", { authorId }, 400);
-      }
-
-      const posts = await PostService.getPostsByAuthor(authorId);
-      return sendSuccess(res, "Posts do autor", posts);
     } catch (err) {
       next(err);
     }
@@ -79,31 +71,11 @@ export class PostController {
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { title, content, slug } = req.body;
-      const authorId = req.user?.id;
+      const authorId = req.user?.id as string;
+      const parsed = registerPostSchema.parse(req.body);
+      const post = await PostService.createPost(parsed, authorId);
 
-      if (!authorId) {
-        return sendError(res, "Usuário não autenticado", null, 401);
-      }
-
-      if (!title || !content || !slug) {
-        return sendError(
-          res,
-          "Campos obrigatórios faltando",
-          { title, content, slug },
-          400,
-        );
-      }
-
-      const post = await PostService.createPost({
-        title,
-        content,
-        slug,
-        authorId,
-      });
-
-      res.status(201);
-      return sendSuccess(res, "Post criado com sucesso", post);
+      return sendSuccess(res, "Post criado com sucesso", post, 201);
     } catch (err) {
       next(err);
     }
@@ -112,19 +84,22 @@ export class PostController {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { title, content, slug } = req.body;
-
-      if (!id || Array.isArray(id)) {
-        return sendError(res, "ID inválido", { id }, 400);
-      }
-
-      const post = await PostService.updatePost(id, {
-        title,
-        content,
-        slug,
-      });
+      const post = await PostService.updatePost(id as string, req.body);
 
       return sendSuccess(res, "Post atualizado com sucesso", post);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async activitiesPosts(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const activities = await ActivityService.getRecentActivities(10);
+      return sendSuccess(res, "Listagem de atividades", activities);
     } catch (err) {
       next(err);
     }
@@ -133,12 +108,7 @@ export class PostController {
   static async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-
-      if (!id || Array.isArray(id)) {
-        return sendError(res, "ID inválido", { id }, 400);
-      }
-
-      await PostService.deletePost(id);
+      await PostService.deletePost(id as string);
       return sendSuccess(res, "Post deletado com sucesso", null);
     } catch (err) {
       next(err);
@@ -148,13 +118,11 @@ export class PostController {
   static async publish(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-
-      if (!id || Array.isArray(id)) {
-        return sendError(res, "ID inválido", { id }, 400);
-      }
-
-      const post = await PostService.publishPost(id);
-      return sendSuccess(res, "Post publicado com sucesso", post);
+      const result = await PostService.publishPost(id as string);
+      const message = result.published
+        ? "Post publicado com sucesso"
+        : "Post despublicado com sucesso";
+      return sendSuccess(res, message, result.post);
     } catch (err) {
       next(err);
     }

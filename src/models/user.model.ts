@@ -1,5 +1,18 @@
-// Tipos de UserRole exportados do Prisma
 export type UserRole = "ADMIN" | "AUTHOR";
 
-// Os tipos de input (RegisterInput, UpdateUserInput, LoginInput, UserFilterInput)
-// estão definidos em schemas/auth.schema.ts usando Zod
+export type CreateUserInput = {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+};
+
+export type UpdateUserInput = Partial<Omit<CreateUserInput, "password">>;
+
+export type UserFilter = {
+  name?: string;
+  email?: string;
+  role?: UserRole;
+  page?: number;
+  limit?: number;
+};

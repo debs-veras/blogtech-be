@@ -32,6 +32,8 @@ export const authMiddleware = (
     const decoded = jwt.verify(token, JWT_SECRET) as {
       id: string;
       role: UserRole;
+      name?: string;
+      email?: string;
     };
     req.user = decoded;
     next();
@@ -43,7 +45,7 @@ export const authMiddleware = (
 declare global {
   namespace Express {
     interface Request {
-      user?: { id: string; role: UserRole };
+      user?: { id: string; role: UserRole; name?: string; email?: string };
     }
   }
 }

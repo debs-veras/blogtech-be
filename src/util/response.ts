@@ -1,8 +1,5 @@
 import { Response } from "express";
 
-/**
- * Response Types
- */
 export type SuccessResponse<T = any> = {
   success: true;
   message: string;

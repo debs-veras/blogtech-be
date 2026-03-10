@@ -27,17 +27,6 @@ export class CategoryRepository {
     });
   }
 
-  async findBySlug(slug: string) {
-    return prisma.category.findUnique({
-      where: { slug },
-      include: {
-        _count: {
-          select: { posts: true },
-        },
-      },
-    });
-  }
-
   async create(data: CreateCategoryInput) {
     return prisma.category.create({
       data,

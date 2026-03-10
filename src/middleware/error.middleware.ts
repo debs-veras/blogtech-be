@@ -9,9 +9,9 @@ interface AppError extends Error {
 
 export const errorMiddleware = (
   err: unknown,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ) => {
   const isProduction = process.env.NODE_ENV === "production";
 

@@ -1,8 +1,8 @@
 import { ActivityRepository } from "repositories/activity.repository";
 
 export class ActivityService {
-  static async getRecentActivities(limit = 10) {
-    return ActivityRepository.findRecent(limit);
+  static async getRecentActivities(limit = 10, authorId?: string) {
+    return ActivityRepository.findRecent(limit, authorId);
   }
 
   static buildDescription(

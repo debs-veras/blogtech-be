@@ -143,9 +143,12 @@ export class PostRepository {
     });
   }
 
-  static async findRecent(limit: number) {
+  static async findRecent(limit: number, authorId?: string) {
+    const where: any = { published: true };
+    if (authorId) where.authorId = authorId;
+
     return prisma.post.findMany({
-      where: { published: true },
+      where,
       include: {
         author: { select: { id: true, name: true, email: true } },
         category: true,
@@ -155,9 +158,12 @@ export class PostRepository {
     });
   }
 
-  static async findMostViewed(limit: number) {
+  static async findMostViewed(limit: number, authorId?: string) {
+    const where: any = { published: true };
+    if (authorId) where.authorId = authorId;
+
     return prisma.post.findMany({
-      where: { published: true },
+      where,
       include: {
         author: { select: { id: true, name: true, email: true } },
         category: true,
@@ -167,24 +173,25 @@ export class PostRepository {
     });
   }
 
-  static async countPosts() {
-    return prisma.post.count();
+  static async countPosts(authorId?: string) {
+    return prisma.post.count(authorId ? { where: { authorId } } : undefined);
   }
 
-  static async countPublished() {
-    return prisma.post.count({
-      where: { published: true },
-    });
+  static async countPublished(authorId?: string) {
+    const where: any = { published: true };
+    if (authorId) where.authorId = authorId;
+    return prisma.post.count({ where });
   }
 
-  static async countDrafts() {
-    return prisma.post.count({
-      where: { published: false },
-    });
+  static async countDrafts(authorId?: string) {
+    const where: any = { published: false };
+    if (authorId) where.authorId = authorId;
+    return prisma.post.count({ where });
   }
 
-  static async sumViews() {
+  static async sumViews(authorId?: string) {
     const result = await prisma.post.aggregate({
+      where: authorId ? { authorId } : undefined,
       _sum: {
         views: true,
       },

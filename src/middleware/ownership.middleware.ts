@@ -11,9 +11,10 @@ export const ownershipMiddleware = (resourceType: "post" | "user") => {
     // ADMINs têm acesso total
     if (req.user.role === "ADMIN") return next();
 
-    const resourceId = Array.isArray(req.params.authorId)
-      ? req.params.authorId[0]
-      : req.params.authorId;
+    const paramId = req.params.id || req.params.authorId;
+    const resourceId = Array.isArray(paramId)
+      ? paramId[0]
+      : paramId;
       
     if (!resourceId) return sendError(res, "ID do recurso não fornecido", 400);
 

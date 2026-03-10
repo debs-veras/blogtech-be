@@ -65,6 +65,37 @@ export class PostService {
     };
   }
 
+  static async getAuthorDashboardStats(authorId: string) {
+    if (!authorId) throw { statusCode: 400, message: "ID do autor inválido" };
+
+    const [
+      totalPosts,
+      publishedPosts,
+      draftPosts,
+      totalViews,
+      recentPosts,
+      popularPosts,
+    ] = await Promise.all([
+      PostRepository.countPosts(authorId),
+      PostRepository.countPublished(authorId),
+      PostRepository.countDrafts(authorId),
+      PostRepository.sumViews(authorId),
+      PostRepository.findRecent(5, authorId),
+      PostRepository.findMostViewed(5, authorId),
+    ]);
+
+    return {
+      stats: {
+        totalPosts,
+        publishedPosts,
+        draftPosts,
+        totalViews,
+      },
+      recentPosts,
+      popularPosts,
+    };
+  }
+
   static async getPostsByAuthor(authorId?: string, filters?: PostFilter) {
     if (!authorId) {
       throw {

@@ -35,6 +35,13 @@ postRouter.get(
   roleMiddleware(["ADMIN"]),
   PostController.getDashboard,
 );
+// Rota para obter dados para dashboard do autor (apenas AUTHOR ou ADMIN)
+postRouter.get(
+  "/author-dashboard",
+  authMiddleware,
+  roleMiddleware(["ADMIN", "AUTHOR"]),
+  PostController.getAuthorDashboard,
+);
 // Rota para obter posts por autor
 postRouter.get(
   "/author/:authorId",
@@ -82,7 +89,7 @@ postRouter.patch(
 postRouter.get(
   "/activities",
   authMiddleware,
-  roleMiddleware(["ADMIN"]),
+  roleMiddleware(["ADMIN", "AUTHOR"]),
   PostController.activitiesPosts,
 );
 

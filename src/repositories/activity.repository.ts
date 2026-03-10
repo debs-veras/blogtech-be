@@ -18,8 +18,12 @@ export class ActivityRepository {
     });
   }
 
-  static async findRecent(limit = 10) {
+  static async findRecent(limit = 10, authorId?: string) {
+    const where: any = {};
+    if (authorId) where.userId = authorId;
+
     return prisma.activity.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       take: limit,
       include: {

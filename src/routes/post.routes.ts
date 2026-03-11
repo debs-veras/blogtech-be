@@ -5,7 +5,6 @@ import { ownershipMiddleware } from "middleware/ownership.middleware";
 import { roleMiddleware } from "middleware/permissions.middleware";
 import { auditMiddleware } from "middleware/audit.middleware";
 import { rateLimitMiddleware } from "middleware/rate-limit.middleware";
-import { ActivityService } from "service/activity.service";
 
 const postRouter: ExpressRouter = Router();
 // Rotas públicas

@@ -19,7 +19,7 @@ export const registerPostSchema = z.object({
   categoryId: z.string().uuid("ID de categoria inválido").optional(),
   authorId: z.string().uuid("ID de autor inválido").optional(),
 });
-
+  
 export const updatePostSchema = z.object({
   title: z
     .string()

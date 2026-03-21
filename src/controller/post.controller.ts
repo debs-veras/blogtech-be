@@ -18,7 +18,10 @@ export class PostController {
   static async getPublished(req: Request, res: Response, next: NextFunction) {
     try {
       const filters = req.query;
-      const result = await PostService.getAllPosts(filters);
+      const result = await PostService.getAllPosts({
+        ...filters,
+        published: true,
+      });
       return sendSuccess(res, "Lista de posts publicados", result);
     } catch (err) {
       next(err);
@@ -34,11 +37,18 @@ export class PostController {
     }
   }
 
-  static async getAuthorDashboard(req: Request, res: Response, next: NextFunction) {
+  static async getAuthorDashboard(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
     try {
       const authorId = req.user?.id;
-      if (!authorId) throw { statusCode: 401, message: "Usuário não autenticado" };
-      const data = await PostService.getAuthorDashboardStats(authorId as string);
+      if (!authorId)
+        throw { statusCode: 401, message: "Usuário não autenticado" };
+      const data = await PostService.getAuthorDashboardStats(
+        authorId as string,
+      );
       return sendSuccess(res, "Dados do dashboard do autor", data);
     } catch (err) {
       next(err);
@@ -112,7 +122,10 @@ export class PostController {
       const user = req.user;
       const authorId = user?.role === "ADMIN" ? undefined : user?.id;
 
-      const activities = await ActivityService.getRecentActivities(10, authorId);
+      const activities = await ActivityService.getRecentActivities(
+        10,
+        authorId,
+      );
       return sendSuccess(res, "Listagem de atividades", activities);
     } catch (err) {
       next(err);
